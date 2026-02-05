@@ -1,0 +1,27 @@
+1. Identificadores de Red y Dominios
+Es lo más común. Tendrás que localizar y editar estas líneas en los archivos de configuración (VirtualHost):
+
+ServerName y ServerAlias: Asegúrate de poner el dominio principal (con www) y el alternativo (con aplicacion.) tal como indique el papel.
+
+IPs de Restricción: En la directiva Require ip, deberás poner la red específica de la VLAN que te asignen (ej: 10.18.70.0/24).
+
+2. Estructura de Directorios (Rutas)
+El examen puede pedirte que guardes la web en sitios no convencionales:
+
+DocumentRoot: Fíjate si te piden /var/www/... o rutas externas como /srv/www/....
+
+Alias: Es muy probable que te pidan que una URL (como /privado) apunte a una carpeta física distinta al directorio raíz.
+
+3. Seguridad y Usuarios
+Nombres de usuario: Tendrás que generar el archivo .htpasswd con los nombres exactos (ej: Usuari01, Usuari02).
+
+Ubicación del archivo de contraseñas: A veces piden que el archivo .htpasswd esté fuera de /etc/apache2/ por seguridad.
+
+Mensajes de error personalizados: Tendrás que cambiar el texto del ErrorDocument 404 para que coincida exactamente con la frase del enunciado.
+
+4. Scripts CGI (Solo para la Intranet de Sistema)
+Si te piden monitorización, deberás cambiar:
+
+Comandos bash: Puede que te pidan otros comandos además de uptime o free.
+
+Permisos de ejecución: No olvides el comando chmod +x sobre los archivos .sh, o el navegador dará un error 500.
