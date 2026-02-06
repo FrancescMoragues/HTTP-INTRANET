@@ -1,3 +1,52 @@
+COMPROVACIÓN
+
+1. Simular los dominios (DNS Local)
+Como estás en una intranet y usas nombres como www.intranet.kuy.com, tu equipo no sabrá a qué IP ir a menos que edites el archivo hosts.
+
+En el equipo desde donde vayas a navegar (o en el mismo servidor para probar localmente), edita el archivo /etc/hosts (Linux/Mac) o C:\Windows\System32\drivers\etc\hosts (Windows) y añade:
+
+Plaintext
+127.0.0.1  www.intranet.kuy.com aplicacion.intranet.kuy.com
+127.0.0.1  www.sistema.kuy.org aplicacion.sistema.kuy.org
+(Sustituye 127.0.0.1 por la IP real del servidor si pruebas desde otro equipo).
+
+2. Pruebas de fuego (Checklist)
+A. Verificar app.intranet.kuy.com
+Acceso público: Ve a http://www.intranet.kuy.com. Deberías ver el <h1> de la aplicación.
+
+Acceso privado: Ve a http://www.intranet.kuy.com/privado.
+
+Debe pedirte usuario y contraseña.
+
+Prueba con Usuari01 y contraseña 1234.
+
+Error 404 personalizado: Intenta entrar en http://www.intranet.kuy.com/noexiste. Deberías ver el mensaje: "Error en la aplicacion web appintranet..."
+
+B. Verificar app.sistema.kuy.org
+Autenticación global: Al entrar a http://www.sistema.kuy.org, debería pedirte login de inmediato, ya que pusiste la restricción en la raíz (<Directory $ROOT_SIST>).
+
+Usa Usuari04 y 1234.
+
+Prueba de Scripts CGI: Esta es la parte más crítica. Intenta acceder a:
+
+http://www.sistema.kuy.org/uptime.sh
+
+Debería mostrarte el texto plano con el tiempo de actividad del servidor. Si se descarga el archivo en lugar de ejecutarse, el módulo CGI no está bien mapeado.
+
+3. Comandos de verificación técnica
+Si algo falla, ejecuta estos comandos en la terminal del servidor para ver qué dice Apache:
+
+Sintaxis del script: sudo apache2ctl -t (Debe decir "Syntax OK").
+
+Sitios activos: ls /etc/apache2/sites-enabled/ (Deben aparecer intranet.conf y sistema.conf).
+
+Logs de error (el mejor amigo): Si ves un error 500 o no carga, mira el log:
+
+Bash
+tail -f /var/www/appintranet/logs/error.log
+# o
+tail -f /var/www/appsistema/logs/error.log
+
 1. Identificadores de Red y Dominios
 Es lo más común. Tendrás que localizar y editar estas líneas en los archivos de configuración (VirtualHost):
 
