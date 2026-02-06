@@ -1,99 +1,95 @@
 #!/bin/bash
 
 # ==========================================
-# 1. INSTALACIÓN Y MÓDULOS
+# 1. INSTAL·LACIÓ I MODULS
 # ==========================================
 sudo apt update && sudo apt install apache2 apache2-utils -y
 sudo a2enmod cgi authz_host
 
 # ==========================================
-# 2. CONFIGURACIÓN: app.intranet.kuy.com
+# 2. VARIABLES DE XARXA (Basat en la teva IP 192.168.3.84)
 # ==========================================
-# Variables
+IP_SRV="192.168.3.84"
+GW="192.168.3.1"  # Exemple de Gateway per a la teva xarxa
+XARXA_INTRA="192.168.3.0/24"
+
+# ==========================================
+# 3. CONFIGURACIÓ: intranet.primernomdedomini.com
+# ==========================================
 ROOT_INTRA="/var/www/appintranet"
-PRIV_INTRA="/srv/www/appintranet/privado"
+PRIV_INTRA="/var/www/appintranet/privado" # Canviat de /srv a /var per seguretat
 LOGS_INTRA="$ROOT_INTRA/logs"
 
-# Crear estructura
 sudo mkdir -p $ROOT_INTRA $PRIV_INTRA $LOGS_INTRA
 
-# Contenido mínimo y Error 404
-echo "<h1>Aplicacion: app.intranet.kuy.com</h1>" | sudo tee $ROOT_INTRA/index.html
-echo "<h1>Directorio Privado - Intranet</h1>" | sudo tee $PRIV_INTRA/index.html
+echo "<h1>Aplicacio: intranet.primernomdedomini.com</h1>" | sudo tee $ROOT_INTRA/index.html
+echo "<h1>Directori Privat - Intranet Segura</h1>" | sudo tee $PRIV_INTRA/index.html
 echo "Error en la aplicacion web appintranet - archivo no encontrado" | sudo tee $ROOT_INTRA/404.html
 
-# Usuarios (Contraseña: 1234)
+# Usuaris (Contrasenya: 1234)
 sudo htpasswd -bc /etc/apache2/.htpasswd_intra Usuari01 1234
 sudo htpasswd -b /etc/apache2/.htpasswd_intra Usuari02 1234
-sudo htpasswd -b /etc/apache2/.htpasswd_intra Usuari03 1234
 
-# VirtualHost
 sudo bash -c "cat <<EOF > /etc/apache2/sites-available/intranet.conf
 <VirtualHost *:80>
-    ServerName www.intranet.kuy.com
-    ServerAlias aplicacion.intranet.kuy.com
-    ServerAdmin contacto@kuy.com
+    ServerName intranet.primernomdedomini.com
     DocumentRoot $ROOT_INTRA
 
     ErrorDocument 404 /404.html
     ErrorLog $LOGS_INTRA/error.log
     CustomLog $LOGS_INTRA/access.log combined
 
-    Alias /privado $PRIV_INTRA
+    <Directory $ROOT_INTRA>
+        Options -Indexes +FollowSymLinks
+        AllowOverride None
+        Require all granted
+    </Directory>
+
     <Directory $PRIV_INTRA>
         AuthType Basic
         AuthName \"Acces Restringit Usuaris Intra\"
         AuthUserFile /etc/apache2/.htpasswd_intra
         Require valid-user
-        # Solo accesible desde la propia red (ejemplo IP del servidor)
-        Require ip 127.0.0.1 192.168.3.0/24
+        # RESTRICCIÓ D'IP CORRECTA PER A LA TEVA XARXA
+        Require ip 127.0.0.1 $IP_SRV $XARXA_INTRA
     </Directory>
 </VirtualHost>
 EOF"
 
 # ==========================================
-# 3. CONFIGURACIÓN: app.sistema.kuy.org
+# 4. CONFIGURACIÓ: sistema.segonnomdedomini.org
 # ==========================================
-# Variables
 ROOT_SIST="/var/www/appsistema"
-PRIV_SIST="/srv/www/appsistema/privado"
-LOGS_SIST="$ROOT_SIST/logs"
+LOGS_SIST="/var/log/apache2/appsistema"
 
-# Crear estructura
-sudo mkdir -p $ROOT_SIST $PRIV_SIST $LOGS_SIST
+sudo mkdir -p $ROOT_SIST $LOGS_SIST
 
-# Contenido mínimo y Error 404
-echo "<h1>Aplicacion: app.sistema.kuy.org</h1>" | sudo tee $ROOT_SIST/index.html
+echo "<h1>Aplicacion: sistema.segonnomdedomini.org</h1>" | sudo tee $ROOT_SIST/index.html
 echo "Error en la aplicacion web appsistema - archivo no encontrado" | sudo tee $ROOT_SIST/404.html
 
-# Scripts CGI
-for s in uptime free vmstat top atop; do
+# Scripts CGI (Per a la Passa 3)
+for s in uptime free vmstat; do
     echo -e "#!/bin/bash\necho \"Content-type: text/plain\"\necho\n$s" | sudo tee $ROOT_SIST/$s.sh
     sudo chmod +x $ROOT_SIST/$s.sh
 done
 
-# Usuarios Sistema (Contraseña: 1234)
+# Usuaris Sistema (Contrasenya: 1234)
 sudo htpasswd -bc /etc/apache2/.htpasswd_sist Usuari04 1234
-sudo htpasswd -b /etc/apache2/.htpasswd_sist Usuari05 1234
-sudo htpasswd -b /etc/apache2/.htpasswd_sist Usuari06 1234
 
-# VirtualHost
 sudo bash -c "cat <<EOF > /etc/apache2/sites-available/sistema.conf
 <VirtualHost *:80>
-    ServerName www.sistema.kuy.org
-    ServerAlias aplicacion.sistema.kuy.org
-    ServerAdmin contacto@kuy.org
+    ServerName sistema.segonnomdedomini.org
     DocumentRoot $ROOT_SIST
 
     ErrorDocument 404 /404.html
-    ErrorLog $LOGS_SIST/error.log
-    CustomLog $LOGS_SIST/access.log combined
+    ErrorLog \${APACHE_LOG_DIR}/sistema-error.log
+    CustomLog \${APACHE_LOG_DIR}/sistema-access.log combined
 
     <Directory $ROOT_SIST>
         Options +ExecCGI
         AddHandler cgi-script .sh
         AuthType Basic
-        AuthName \"Acces Restringit Administracio\"
+        AuthName \"Acces Administracio\"
         AuthUserFile /etc/apache2/.htpasswd_sist
         Require valid-user
     </Directory>
@@ -101,11 +97,11 @@ sudo bash -c "cat <<EOF > /etc/apache2/sites-available/sistema.conf
 EOF"
 
 # ==========================================
-# 4. ACTIVACIÓN Y REINICIO
+# 5. ACTIVACIÓ, PERMISOS I REINICI
 # ==========================================
+sudo chown -R www-data:www-data /var/www/
+sudo a2dissite 000-default.conf
 sudo a2ensite intranet.conf sistema.conf
 sudo systemctl restart apache2
 
-
-echo "Configuración de Intranet G8 completada."
-
+echo "✅ Intranet configurada. IP SRV: $IP_SRV | GW: $GW"
