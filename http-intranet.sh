@@ -46,7 +46,7 @@ sudo bash -c "cat <<EOF > /etc/apache2/sites-available/intranet.conf
         AuthUserFile /etc/apache2/.htpasswd_intra
         Require valid-user
         # Solo accesible desde la propia red (ejemplo IP del servidor)
-        Require ip 127.0.0.1 10.18.70.0/24
+        Require ip 127.0.0.1 192.168.3.0/24
     </Directory>
 </VirtualHost>
 EOF"
@@ -108,3 +108,4 @@ sudo systemctl restart apache2
 
 
 echo "Configuración de Intranet G8 completada."
+
