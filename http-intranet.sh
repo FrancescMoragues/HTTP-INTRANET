@@ -106,4 +106,5 @@ EOF"
 sudo a2ensite intranet.conf sistema.conf
 sudo systemctl restart apache2
 
-echo "✅ Configuración de Intranet G8 completada."
+
+echo "Configuración de Intranet G8 completada."
